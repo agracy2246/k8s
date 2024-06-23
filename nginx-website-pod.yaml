@@ -1,0 +1,119 @@
+apiVersion: v1
+kind: Pod
+metadata:
+  name: nginx-website
+  labels:
+    app: nginx-website
+spec:
+  containers:
+  - name: nginx
+    image: nginx:latest
+    ports:
+    - containerPort: 80
+    volumeMounts:
+    - name: html-volume
+      mountPath: /usr/share/nginx/html
+    - name: nginx-config
+      mountPath: /etc/nginx/conf.d/default.conf
+      subPath: default.conf
+  volumes:
+  - name: html-volume
+    configMap:
+      name: nginx-html
+      items:
+      - key: index.html
+        path: index.html
+      - key: print.js
+        path: print.js
+  - name: nginx-config
+    configMap:
+      name: nginx-html
+      defaultMode: 0644
+      items:
+      - key: default.conf
+        path: default.conf
+---
+apiVersion: v1
+kind: ConfigMap
+metadata:
+  name: nginx-html
+data:
+  index.html: |
+    <!DOCTYPE html>
+    <html lang="en">
+    <head>
+        <meta charset="UTF-8">
+        <meta name="viewport" content="width=device-width, initial-scale=1.0">
+        <title>Welcome to My Kubernetes Website</title>
+        <script type="module" src="/print"></script>
+        <style>
+            body { font-family: Arial, sans-serif; line-height: 1.6; color: #333; max-width: 800px; margin: 0 auto; padding: 20px; }
+            h1 { color: #FFF; }
+        </style>
+    </head>
+    <body>
+        <h1>Welcome to My Kubernetes Website!</h1>
+        <p>This is a stupid website served by Nginx running in a Kubernetes pod.</p>
+        <p>If you're seeing this, your pod is working correctly!</p>
+    </body>
+    </html>
+  print.js: |
+    // Create a new h1 element
+    const h1 = document.createElement('h1');
+    // Set the text content of the h1
+    h1.textContent = 'This is a red heading';
+    // Set the color of the h1 to red
+    h1.style.color = 'red';
+    // Append the h1 to the body of the document
+    document.body.appendChild(h1);
+  default.conf: |
+    server {
+      listen       80;
+      listen  [::]:80;
+      server_name  localhost;
+
+      #access_log  /var/log/nginx/host.access.log  main;
+
+      location / {
+          root   /usr/share/nginx/html;
+          index  index.html index.htm;
+      }
+      location /print {
+        alias /usr/share/nginx/html/print.js;
+        autoindex off;
+        add_header Content-Type application/javascript;
+      }
+
+      #error_page  404              /404.html;
+
+      # redirect server error pages to the static page /50x.html
+      #
+      error_page   500 502 503 504  /50x.html;
+      location = /50x.html {
+          root   /usr/share/nginx/html;
+      }
+
+      # proxy the PHP scripts to Apache listening on 127.0.0.1:80
+      #
+      #location ~ \.php$ {
+      #    proxy_pass   http://127.0.0.1;
+      #}
+
+      # pass the PHP scripts to FastCGI server listening on 127.0.0.1:9000
+      #
+      #location ~ \.php$ {
+      #    root           html;
+      #    fastcgi_pass   127.0.0.1:9000;
+      #    fastcgi_index  index.php;
+      #    fastcgi_param  SCRIPT_FILENAME  /scripts$fastcgi_script_name;
+      #    include        fastcgi_params;
+      #}
+
+      # deny access to .htaccess files, if Apache's document root
+      # concurs with nginx's one
+      #
+      #location ~ /\.ht {
+      #    deny  all;
+      #}
+    }
+
