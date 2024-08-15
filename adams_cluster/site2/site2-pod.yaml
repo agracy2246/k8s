@@ -1,9 +1,10 @@
 apiVersion: v1
 kind: Pod
 metadata:
-  name: nginx-website
+  name: site2-website
   labels:
-    app: nginx-website
+    app: site2-website
+    type: frontend
 spec:
   containers:
   - name: nginx
@@ -19,7 +20,7 @@ spec:
   volumes:
   - name: html-volume
     configMap:
-      name: nginx-html
+      name: nginx-html-site2
       items:
       - key: index.html
         path: index.html
@@ -27,7 +28,7 @@ spec:
         path: print.js
   - name: nginx-config
     configMap:
-      name: nginx-html
+      name: nginx-html-site2
       defaultMode: 0644
       items:
       - key: default.conf
@@ -36,7 +37,7 @@ spec:
 apiVersion: v1
 kind: ConfigMap
 metadata:
-  name: nginx-html
+  name: nginx-html-site2
 data:
   index.html: |
     <!DOCTYPE html>
@@ -45,27 +46,28 @@ data:
         <meta charset="UTF-8">
         <meta name="viewport" content="width=device-width, initial-scale=1.0">
         <title>Welcome to My Kubernetes Website</title>
-        <script type="module" src="/print"></script>
+        <script  src="print.js"></script>
         <style>
             body { font-family: Arial, sans-serif; line-height: 1.6; color: #333; max-width: 800px; margin: 0 auto; padding: 20px; }
             h1 { color: #FFF; }
         </style>
     </head>
     <body>
-        <h1>Welcome to My Kubernetes Website!</h1>
+        <h1>Welcome to My Kubernetes Website #2!</h1>
         <p>This is a stupid website served by Nginx running in a Kubernetes pod.</p>
         <p>If you're seeing this, your pod is working correctly!</p>
     </body>
     </html>
   print.js: |
-    // Create a new h1 element
-    const h1 = document.createElement('h1');
-    // Set the text content of the h1
-    h1.textContent = 'This is a red heading';
-    // Set the color of the h1 to red
-    h1.style.color = 'red';
-    // Append the h1 to the body of the document
-    document.body.appendChild(h1);
+    window.addEventListener('DOMContentLoaded', (event) => {// Create a new h1 element
+      const h1 = document.createElement('h1');
+      // Set the text content of the h1
+      h1.textContent = 'This is a blue heading';
+      // Set the color of the h1 to red
+      h1.style.color = 'blue';
+      // Append the h1 to the body of the document
+      document.body.appendChild(h1);
+    });
   default.conf: |
     server {
       listen       80;
@@ -74,13 +76,13 @@ data:
 
       #access_log  /var/log/nginx/host.access.log  main;
 
-      location / {
+      location /site2/ {
           root   /usr/share/nginx/html;
           index  index.html index.htm;
+          try_files $uri $uri/ /site2/index.html;
       }
-      location /print {
-        alias /usr/share/nginx/html/print.js;
-        autoindex off;
+      location ~* ^/site2/.*\.js$ {
+        alias /usr/share/nginx/html;
         add_header Content-Type application/javascript;
       }
 

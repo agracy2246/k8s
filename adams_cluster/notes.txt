@@ -1,0 +1,3 @@
+Current setup is the /etc/hosts redirects 'adams-cluster' to the node ip (minikube ip)
+
+An ingress is enacted to point calls to the node ip to a service (kk-nodeport-service)
